@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap');
+
+:root {
+  --bg: #f5f7fb;
+  --ink: #13233b;
+  --ink-soft: #44546b;
+  --card: #ffffff;
+  --line: #d7dfeb;
+  --accent: #0e7c66;
+  --accent-dark: #0a5d4d;
+  --warn: #b42318;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', 'Trebuchet MS', sans-serif;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 0% 0%, #d4ece6 0%, transparent 35%),
+    radial-gradient(circle at 100% 0%, #dbe7ff 0%, transparent 32%),
+    var(--bg);
+}
+
+.layout {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.hero {
+  margin-bottom: 20px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.hero p {
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 30px rgba(16, 45, 87, 0.08);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+}
+
+input,
+textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--accent-dark);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.catalog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.endpoint-card {
+  text-align: left;
+  background: #f3f7ff;
+  color: var(--ink);
+  border: 1px solid #d9e4fb;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.endpoint-card.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(14, 124, 102, 0.2);
+}
+
+.result {
+  margin-top: 14px;
+}
+
+.result.fail {
+  border-top: 2px solid #f2ccc8;
+  padding-top: 8px;
+}
+
+.json-viewer {
+  margin-top: 10px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.toolbar button {
+  padding: 6px 10px;
+}
+
+.toolbar button.active {
+  background: #113b62;
+}
+
+.json-raw {
+  margin: 0;
+  background: #0d223a;
+  color: #edf4ff;
+  border-radius: 10px;
+  padding: 14px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.json-tree {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  max-height: 360px;
+  overflow: auto;
+}
+
+.key {
+  color: #004f83;
+  font-weight: 600;
+}
+
+.tree-node {
+  padding-left: 14px;
+}
+
+.tree-leaf {
+  margin: 4px 0;
+}
+
+.hit {
+  background: #fff2a8;
+}
+
+.error {
+  color: var(--warn);
+}
+
+.status {
+  margin-top: 10px;
+  color: #0a5d4d;
+}
+
+@media (max-width: 768px) {
+  .layout {
+    padding: 14px;
+  }
+
+  .hero h1 {
+    font-size: 1.6rem;
+  }
+}

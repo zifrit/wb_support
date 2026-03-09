@@ -1,0 +1,74 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      WB_CLIENT_SECRET: ${WB_CLIENT_SECRET:-dev_wb_secret}
+      WB_AUTHORIZATION_TEMPLATE: ${WB_AUTHORIZATION_TEMPLATE:-{token}}
+      ADMIN_AUTHORIZATION_TOKEN: ${ADMIN_AUTHORIZATION_TOKEN:-admin-local-token}
+      WB_TIMEOUT_SECONDS: ${WB_TIMEOUT_SECONDS:-30}
+      WB_RETRIES: ${WB_RETRIES:-0}
+      AUTH_BASE_URL: ${AUTH_BASE_URL:-http://token-validator-mock:9000}
+      AUTH_ISSUE_PATH: ${AUTH_ISSUE_PATH:-/auth/issue}
+      AUTH_VERIFY_PATH: ${AUTH_VERIFY_PATH:-/auth/verify}
+      AUTH_TIMEOUT_SECONDS: ${AUTH_TIMEOUT_SECONDS:-10}
+      DATABASE_URL_ASYNC: ${DATABASE_URL_ASYNC:-postgresql+asyncpg://wb:wb@postgres:5432/wb_wrapper}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:-postgresql://wb:wb@postgres:5432/wb_wrapper}
+      CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
+      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
+      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-default}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8000:8000"
+    depends_on:
+#      postgres:
+#        condition: service_healthy
+#      clickhouse:
+#        condition: service_started
+      token-validator-mock:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+#  postgres:
+#    image: postgres:16
+#    environment:
+#      POSTGRES_DB: wb_wrapper
+#      POSTGRES_USER: wb
+#      POSTGRES_PASSWORD: wb
+#    ports:
+#      - "5432:5432"
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U wb -d wb_wrapper"]
+#      interval: 5s
+#      timeout: 3s
+#      retries: 20
+#    volumes:
+#      - postgres_data:/var/lib/postgresql/data
+
+#  clickhouse:
+#    image: clickhouse/clickhouse-server:24.8
+#    ports:
+#      - "8123:8123"
+#      - "9001:9000"
+#    volumes:
+#      - clickhouse_data:/var/lib/clickhouse
+
+  token-validator-mock:
+    build:
+      context: ./infra/token-validator-mock
+    ports:
+      - "9000:9000"
+
+#volumes:
+#  postgres_data:
+#  clickhouse_data:
