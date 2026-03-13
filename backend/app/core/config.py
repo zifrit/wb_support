@@ -1,11 +1,20 @@
 from functools import lru_cache
 
+from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        cache_strings=False,
+        env_file=(
+            BASE_DIR / ".env.template",
+            BASE_DIR / ".env",
+        )
+    )
 
     app_name: str = "WB Wrapper"
     app_env: str = "dev"
@@ -27,8 +36,14 @@ class Settings(BaseSettings):
     auth_verify_path: str = "/auth/verify"
     auth_timeout_seconds: int = 10
 
-    database_url_async: str = "sqlite+aiosqlite:///./app.db"
-    database_url_sync: str = "sqlite:///./app.db"
+    test_database_url_async: str = "sqlite+aiosqlite:///./app.db"
+    test_database_url_sync: str = "sqlite:///./app.db"
+
+    db_user: str
+    db_pass: str
+    db_host: str
+    db_port: int
+    db_name: str
 
     clickhouse_url: str = "http://clickhouse:8123"
     clickhouse_user: str = "default"
@@ -37,6 +52,14 @@ class Settings(BaseSettings):
 
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def database_url_asyncpg(self):
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_pass}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    @property
+    def database_url_syncpg(self):
+        return f"postgresql://{self.db_user}:{self.db_pass}@{self.db_host}:{self.db_port}/{self.db_name}"
 
 
 @lru_cache

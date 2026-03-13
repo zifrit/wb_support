@@ -12,8 +12,13 @@ services:
       AUTH_ISSUE_PATH: ${AUTH_ISSUE_PATH:-/auth/issue}
       AUTH_VERIFY_PATH: ${AUTH_VERIFY_PATH:-/auth/verify}
       AUTH_TIMEOUT_SECONDS: ${AUTH_TIMEOUT_SECONDS:-10}
-      DATABASE_URL_ASYNC: ${DATABASE_URL_ASYNC:-postgresql+asyncpg://wb:wb@postgres:5432/wb_wrapper}
-      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:-postgresql://wb:wb@postgres:5432/wb_wrapper}
+      TEST_DATABASE_URL_ASYNC: ${TEST_DATABASE_URL_ASYNC:-sqlite+aiosqlite:///./app.db}
+      TEST_DATABASE_URL_SYNC: ${TEST_DATABASE_URL_SYNC:-sqlite:///./app.db}
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-wb}
+      DB_PASS: ${DB_PASS:-password}
+      DB_NAME: ${DB_NAME:-wb_wrapper}
       CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
       CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
