@@ -20,3 +20,5 @@ class EndpointMeta(BaseModel):
 
 class MetaResponse(BaseModel):
     endpoints: list[EndpointMeta]
+    debug: bool = False
+    defaultUsername: str | None = None

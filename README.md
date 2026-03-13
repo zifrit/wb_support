@@ -59,3 +59,8 @@ uv run alembic revision --autogenerate -m "describe change"
 ## Admin bypass
 - If frontend username is `admin`, login skips token issue/verify requests.
 - Backend also bypasses external auth calls for `admin` and uses `ADMIN_AUTHORIZATION_TOKEN` for WB `Authorization` header.
+
+## Debug mode
+- Set `DEBUG=true` to disable auth checks across the app.
+- In debug mode backend does not require a logged-in user and uses `DEBUG_USERNAME` plus `DEBUG_AUTHORIZATION_TOKEN`.
+- Frontend reads debug state from `/meta/endpoints` and unlocks the full UI without login.

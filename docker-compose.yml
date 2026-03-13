@@ -3,9 +3,12 @@ services:
     build:
       context: ./backend
     environment:
+      DEBUG: ${DEBUG:-false}
+      DEBUG_USERNAME: ${DEBUG_USERNAME:-debug}
       WB_CLIENT_SECRET: ${WB_CLIENT_SECRET:-dev_wb_secret}
       WB_AUTHORIZATION_TEMPLATE: ${WB_AUTHORIZATION_TEMPLATE:-{token}}
       ADMIN_AUTHORIZATION_TOKEN: ${ADMIN_AUTHORIZATION_TOKEN:-admin-local-token}
+      DEBUG_AUTHORIZATION_TOKEN: ${DEBUG_AUTHORIZATION_TOKEN:-debug-local-token}
       WB_TIMEOUT_SECONDS: ${WB_TIMEOUT_SECONDS:-30}
       WB_RETRIES: ${WB_RETRIES:-0}
       AUTH_BASE_URL: ${AUTH_BASE_URL:-http://token-validator-mock:9000}

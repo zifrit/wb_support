@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { runEndpoint } from '../api/client'
 import JsonViewer from '../components/JsonViewer'
 
-export default function EndpointRunner({ endpoint, username }) {
+export default function EndpointRunner({ endpoint, username, debugEnabled }) {
   const [queryState, setQueryState] = useState({})
   const [bodyState, setBodyState] = useState('{}')
   const [result, setResult] = useState(null)
@@ -77,7 +77,7 @@ export default function EndpointRunner({ endpoint, username }) {
           </label>
         )}
 
-        <button disabled={running || !username || Boolean(bodyError)} onClick={run}>
+        <button disabled={running || (!debugEnabled && !username) || Boolean(bodyError)} onClick={run}>
           {running ? 'Running...' : 'Run'}
         </button>
       </div>
