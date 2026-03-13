@@ -15,6 +15,7 @@ Fullstack API wrapper around WB endpoints.
 ## Backend Run (uv)
 ```bash
 cd backend
+uv run alembic upgrade head
 uv run uvicorn backend.app.main:app --app-dir .. --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -29,6 +30,13 @@ npm run dev
 ```bash
 cp .env.example .env
 docker compose up --build
+```
+
+## Migrations
+```bash
+cd backend
+uv run alembic upgrade head
+uv run alembic revision --autogenerate -m "describe change"
 ```
 
 ## Backend API

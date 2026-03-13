@@ -10,7 +10,6 @@ from backend.app.api.routes.wb import router as wb_router
 from backend.app.core.config import get_settings
 from backend.app.core.error_handlers import register_error_handlers
 from backend.app.core.logging import configure_logging, get_logger
-from backend.app.db.session import init_db
 
 settings = get_settings()
 
@@ -18,7 +17,6 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     configure_logging()
-    await init_db()
     yield
 
 
