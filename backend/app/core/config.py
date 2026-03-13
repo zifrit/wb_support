@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     app_env: str = "dev"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
+    debug: bool = False
+    debug_username: str = "debug"
 
     cors_origins: str = "http://localhost:3000"
 
@@ -30,6 +32,7 @@ class Settings(BaseSettings):
     wb_authorization_template: str = "{token}"
     admin_username: str = "admin"
     admin_authorization_token: str = Field(default="admin-local-token", alias="ADMIN_AUTHORIZATION_TOKEN")
+    debug_authorization_token: str = Field(default="debug-local-token", alias="DEBUG_AUTHORIZATION_TOKEN")
 
     auth_base_url: str = "http://token-validator-mock:9000"
     auth_issue_path: str = "/auth/issue"

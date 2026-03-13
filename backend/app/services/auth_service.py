@@ -13,6 +13,8 @@ class AuthService:
     settings: Settings
 
     async def login(self, username: str) -> str:
+        if self.settings.debug:
+            return self.settings.debug_authorization_token
         if username == self.settings.admin_username:
             return self.settings.admin_authorization_token
         token = await self.auth_client.issue_token(username=username)
@@ -20,6 +22,8 @@ class AuthService:
         return token
 
     async def verify_saved_token(self, username: str) -> bool:
+        if self.settings.debug:
+            return True
         if username == self.settings.admin_username:
             return True
         saved = await self.repository.get_by_username(username=username)
@@ -40,6 +44,8 @@ class AuthService:
         raise AuthorizationError(message="User token is invalid after refresh")
 
     async def resolve_token_for_wb(self, username: str) -> str:
+        if self.settings.debug:
+            return self.settings.debug_authorization_token
         if username == self.settings.admin_username:
             return self.settings.admin_authorization_token
         saved = await self.repository.get_by_username(username=username)

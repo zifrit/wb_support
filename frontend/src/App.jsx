@@ -11,11 +11,15 @@ export default function App() {
   const [selectedId, setSelectedId] = useState('')
   const [loadingEndpoints, setLoadingEndpoints] = useState(true)
   const [metaError, setMetaError] = useState('')
+  const [debugEnabled, setDebugEnabled] = useState(false)
+  const [debugUsername, setDebugUsername] = useState('')
 
   const selectedEndpoint = useMemo(
     () => endpoints.find((endpoint) => endpoint.id === selectedId),
     [endpoints, selectedId]
   )
+
+  const effectiveUsername = debugEnabled ? username || debugUsername : username
 
   useEffect(() => {
     localStorage.setItem('wb_username', username)
@@ -29,6 +33,8 @@ export default function App() {
         const response = await fetchMetaEndpoints()
         setEndpoints(response.data.endpoints || [])
         setSelectedId((response.data.endpoints || [])[0]?.id || '')
+        setDebugEnabled(Boolean(response.data.debug))
+        setDebugUsername(response.data.defaultUsername || '')
       } catch {
         setMetaError('Failed to load endpoint catalog')
       } finally {
@@ -38,6 +44,12 @@ export default function App() {
     loadMeta()
   }, [])
 
+  useEffect(() => {
+    if (debugEnabled && !username && debugUsername) {
+      setUsername(debugUsername)
+    }
+  }, [debugEnabled, debugUsername, username])
+
   return (
     <main className="layout">
       <header className="hero">
@@ -46,7 +58,13 @@ export default function App() {
       </header>
 
       <div className="grid">
-        <LoginPage username={username} onUsernameChange={setUsername} onAuthSuccess={() => {}} />
+        <LoginPage
+          username={effectiveUsername}
+          onUsernameChange={setUsername}
+          onAuthSuccess={() => {}}
+          debugEnabled={debugEnabled}
+          debugUsername={debugUsername}
+        />
 
         {loadingEndpoints ? (
           <section className="card">
@@ -62,7 +80,7 @@ export default function App() {
           <EndpointsCatalog endpoints={endpoints} selectedId={selectedId} onSelect={setSelectedId} />
         )}
 
-        <EndpointRunner endpoint={selectedEndpoint} username={username} />
+        <EndpointRunner endpoint={selectedEndpoint} username={effectiveUsername} debugEnabled={debugEnabled} />
       </div>
     </main>
   )
