@@ -9,7 +9,7 @@ from backend.app.api.routes.meta import router as meta_router
 from backend.app.api.routes.wb import router as wb_router
 from backend.app.core.config import get_settings
 from backend.app.core.error_handlers import register_error_handlers
-from backend.app.core.logging import configure_logging, get_logger
+from backend.app.core.log_config import configure_logging, get_logger
 
 settings = get_settings()
 
