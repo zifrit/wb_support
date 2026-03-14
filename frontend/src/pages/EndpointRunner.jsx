@@ -23,9 +23,9 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
 
   if (!endpoint) {
     return (
-      <section className="card">
-        <h2>Endpoint Runner</h2>
-        <p>Select endpoint from catalog.</p>
+      <section className="surface-card runner-panel">
+        <h2>Runner</h2>
+        <p className="muted">Выберите ручку в каталоге слева.</p>
       </section>
     )
   }
@@ -51,15 +51,25 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
   }
 
   return (
-    <section className="card">
-      <h2>Endpoint Runner</h2>
-      <p>
-        <strong>{endpoint.method}</strong> {endpoint.path}
-      </p>
+    <section className="surface-card runner-panel">
+      <div className="section-head">
+        <div>
+          <p className="eyebrow">Runner</p>
+          <h2>{endpoint.title}</h2>
+        </div>
+        <div className="runner-route">
+          <strong>{endpoint.method}</strong>
+          <span>{endpoint.path}</span>
+        </div>
+      </div>
+
       <div className="stack">
         {queryFields.map((field) => (
-          <label key={field.name}>
-            {field.name}
+          <label key={field.name} className="field">
+            <span>
+              {field.name}
+              {field.required ? ' *' : ''}
+            </span>
             <input
               placeholder={field.description}
               required={field.required}
@@ -70,15 +80,19 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
         ))}
 
         {endpoint.method !== 'GET' && (
-          <label>
-            JSON body
+          <label className="field">
+            <span>JSON body</span>
             <textarea rows={10} value={bodyState} onChange={(e) => setBodyState(e.target.value)} />
             {bodyError && <span className="error">{bodyError}</span>}
           </label>
         )}
 
-        <button disabled={running || (!debugEnabled && !username) || Boolean(bodyError)} onClick={run}>
-          {running ? 'Running...' : 'Run'}
+        <button
+          className="primary-button"
+          disabled={running || (!debugEnabled && !username) || Boolean(bodyError)}
+          onClick={run}
+        >
+          {running ? 'Выполняю запрос...' : 'Запустить'}
         </button>
       </div>
 
