@@ -1,4 +1,4 @@
-from backend.app.schemas.meta import EndpointMeta, FieldMeta
+from backend.app.schemas.meta import EndpointMeta
 
 
 def get_endpoint_catalog() -> list[EndpointMeta]:
@@ -6,34 +6,26 @@ def get_endpoint_catalog() -> list[EndpointMeta]:
         EndpointMeta(
             id="wb_adverts",
             title="Информация о кампании (статус РК)",
-            method="GET",
+            method="POST",
             path="/wb/adverts",
             requiresUsername=True,
-            query=[
-                FieldMeta(name="ids", type="string", required=False, description="CSV id кампаний: 123,456"),
-                FieldMeta(name="statuses", type="string", required=False, description="CSV статусов: 9,11"),
-                FieldMeta(name="payment_type", type="string", required=False, description="cpm | cpc"),
-            ],
+            body={"type": "object"},
         ),
         EndpointMeta(
             id="wb_fullstats",
             title="Статистика кампаний",
-            method="GET",
+            method="POST",
             path="/wb/fullstats",
             requiresUsername=True,
-            query=[
-                FieldMeta(name="ids", type="string", required=True, description="CSV advert ids"),
-                FieldMeta(name="beginDate", type="string", required=True, description="YYYY-MM-DD"),
-                FieldMeta(name="endDate", type="string", required=True, description="YYYY-MM-DD"),
-            ],
+            body={"type": "object"},
         ),
         EndpointMeta(
             id="wb_stop",
             title="Завершение кампании",
-            method="GET",
+            method="POST",
             path="/wb/stop",
             requiresUsername=True,
-            query=[FieldMeta(name="id", type="string", required=True, description="Campaign id")],
+            body={"type": "object"},
         ),
         EndpointMeta(
             id="wb_normquery_stats",
@@ -54,13 +46,10 @@ def get_endpoint_catalog() -> list[EndpointMeta]:
         EndpointMeta(
             id="wb_orders",
             title="Заказы",
-            method="GET",
+            method="POST",
             path="/wb/orders",
             requiresUsername=True,
-            query=[
-                FieldMeta(name="dateFrom", type="string", required=True, description="YYYY-MM-DD"),
-                FieldMeta(name="flag", type="int", required=False, description="Default 0"),
-            ],
+            body={"type": "object"},
         ),
         EndpointMeta(
             id="wb_search_report_product_search_texts",

@@ -33,13 +33,13 @@ def test_wb_adverts_uses_db_token_in_authorization(monkeypatch, test_client):
     test_client.post("/auth/login", json={"username": username})
     test_client.post("/auth/verify", json={"username": username, "code": "1234"})
 
-    response = test_client.get("/wb/adverts", params={"ids": "1,2"}, headers={"X-Username": username})
+    response = test_client.post("/wb/adverts", json={"ids": "1,2"}, headers={"X-Username": username})
 
     assert response.status_code == 200
     payload = response.json()
     assert payload["ok"] is True
     assert captured["headers"]["Authorization"] == f"db-token-{username}"
-    assert captured["headers"]["User-Agent"] == "wbas_xway"
+    assert captured["headers"]["user-agent"] == "wbas_xway"
 
 
 @pytest.mark.usefixtures("test_client")
@@ -68,7 +68,7 @@ def test_wb_401_requires_relogin(monkeypatch, test_client):
     test_client.post("/auth/login", json={"username": username})
     test_client.post("/auth/verify", json={"username": username, "code": "1234"})
 
-    response = test_client.get("/wb/orders", params={"dateFrom": "2026-03-01"}, headers={"X-Username": username})
+    response = test_client.post("/wb/orders", json={"dateFrom": "2026-03-01"}, headers={"X-Username": username})
 
     assert response.status_code == 401
     assert response.json()["error"]["message"] == "Stored token was rejected by WB. Re-login is required"
