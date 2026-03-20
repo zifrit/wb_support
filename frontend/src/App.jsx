@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { fetchMetaEndpoints } from './api/client'
+import { fetchMetaConfig, fetchMetaEndpoints } from './api/client'
 import EndpointsCatalog from './pages/EndpointsCatalog'
 import EndpointRunner from './pages/EndpointRunner'
 import LoginPage from './pages/LoginPage'
@@ -26,7 +26,8 @@ export default function App() {
   const [isAuthorized, setIsAuthorized] = useState(localStorage.getItem(AUTH_FLAG_KEY) === 'true')
   const [endpoints, setEndpoints] = useState([])
   const [selectedId, setSelectedId] = useState('')
-  const [loadingEndpoints, setLoadingEndpoints] = useState(true)
+  const [loadingEndpoints, setLoadingEndpoints] = useState(false)
+  const [loadingConfig, setLoadingConfig] = useState(true)
   const [metaError, setMetaError] = useState('')
   const [debugEnabled, setDebugEnabled] = useState(false)
   const [debugUsername, setDebugUsername] = useState('')
@@ -53,22 +54,20 @@ export default function App() {
   }, [username])
 
   useEffect(() => {
-    async function loadMeta() {
-      setLoadingEndpoints(true)
+    async function loadConfig() {
+      setLoadingConfig(true)
       setMetaError('')
       try {
-        const response = await fetchMetaEndpoints()
-        setEndpoints(response.data.endpoints || [])
-        setSelectedId((response.data.endpoints || [])[0]?.id || '')
+        const response = await fetchMetaConfig()
         setDebugEnabled(Boolean(response.data.debug))
         setDebugUsername(response.data.defaultUsername || '')
       } catch {
-        setMetaError('Failed to load endpoint catalog')
+        setMetaError('Failed to load app config')
       } finally {
-        setLoadingEndpoints(false)
+        setLoadingConfig(false)
       }
     }
-    loadMeta()
+    loadConfig()
   }, [])
 
   useEffect(() => {
@@ -78,6 +77,41 @@ export default function App() {
   }, [debugEnabled, debugUsername, username])
 
   useEffect(() => {
+    if (loadingConfig) return
+
+    if (!shouldOpenApp) {
+      setEndpoints([])
+      setSelectedId('')
+      setLoadingEndpoints(false)
+      return
+    }
+
+    async function loadMeta() {
+      setLoadingEndpoints(true)
+      setMetaError('')
+      try {
+        const response = await fetchMetaEndpoints()
+        const nextEndpoints = response.data.endpoints || []
+        setEndpoints(nextEndpoints)
+        setSelectedId((currentSelectedId) => {
+          if (nextEndpoints.some((endpoint) => endpoint.id === currentSelectedId)) {
+            return currentSelectedId
+          }
+          return nextEndpoints[0]?.id || ''
+        })
+      } catch {
+        setMetaError('Failed to load endpoint catalog')
+      } finally {
+        setLoadingEndpoints(false)
+      }
+    }
+
+    loadMeta()
+  }, [loadingConfig, shouldOpenApp])
+
+  useEffect(() => {
+    if (loadingConfig) return
+
     if (debugEnabled) {
       setIsAuthorized(true)
       localStorage.setItem(AUTH_FLAG_KEY, 'true')
@@ -100,7 +134,7 @@ export default function App() {
     if (shouldOpenApp && path === LOGIN_ROUTE) {
       navigate(APP_ROUTE, true)
     }
-  }, [debugEnabled, path, shouldOpenApp])
+  }, [debugEnabled, loadingConfig, path, shouldOpenApp])
 
   function handleAuthSuccess(authorizedUser) {
     setUsername(authorizedUser)
@@ -114,7 +148,19 @@ export default function App() {
     if (!debugEnabled) {
       localStorage.removeItem(AUTH_FLAG_KEY)
     }
+    setEndpoints([])
+    setSelectedId('')
     navigate(LOGIN_ROUTE)
+  }
+
+  if (loadingConfig) {
+    return (
+      <main className="auth-layout">
+        <section className="auth-card auth-card-minimal">
+          <p className="muted">Загружаю настройки приложения...</p>
+        </section>
+      </main>
+    )
   }
 
   if (!shouldOpenApp || path === LOGIN_ROUTE) {
@@ -125,6 +171,7 @@ export default function App() {
         onAuthSuccess={handleAuthSuccess}
         debugEnabled={debugEnabled}
         debugUsername={debugUsername}
+        authError={metaError}
       />
     )
   }

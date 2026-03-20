@@ -18,7 +18,10 @@ class EndpointMeta(BaseModel):
     body: dict | None = None
 
 
-class MetaResponse(BaseModel):
-    endpoints: list[EndpointMeta]
+class MetaConfigResponse(BaseModel):
     debug: bool = False
     defaultUsername: str | None = None
+
+
+class MetaResponse(MetaConfigResponse):
+    endpoints: list[EndpointMeta]

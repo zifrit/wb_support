@@ -10,14 +10,14 @@ from backend.app.main import app
 
 @pytest.mark.usefixtures("test_client")
 def test_auth_login_and_verify(monkeypatch, test_client):
-    async def fake_issue(self, username: str):
-        return f"token-{username}"
+    async def fake_send_code(self, username: str):
+        return True
 
-    async def fake_verify(self, token: str):
-        return token.startswith("token-")
+    async def fake_verify_code(self, username: str, code: str):
+        return f"token-{username}-{code}"
 
-    monkeypatch.setattr(ExternalAuthClient, "issue_token", fake_issue)
-    monkeypatch.setattr(ExternalAuthClient, "verify_token", fake_verify)
+    monkeypatch.setattr(ExternalAuthClient, "send_code", fake_send_code)
+    monkeypatch.setattr(ExternalAuthClient, "verify_code", fake_verify_code)
 
     username = f"user-{uuid.uuid4().hex[:8]}"
 
@@ -25,7 +25,7 @@ def test_auth_login_and_verify(monkeypatch, test_client):
     assert login_resp.status_code == 200
     assert login_resp.json()["ok"] is True
 
-    verify_resp = test_client.get("/auth/verify", headers={"X-Username": username})
+    verify_resp = test_client.post("/auth/verify", json={"username": username, "code": "1234"})
     assert verify_resp.status_code == 200
     body = verify_resp.json()
     assert body["ok"] is True
@@ -47,6 +47,12 @@ def test_meta_reports_debug_mode(monkeypatch, test_client):
 
     app.dependency_overrides[get_settings] = lambda: debug_settings
     try:
+        config_response = test_client.get("/meta/config")
+        assert config_response.status_code == 200
+        config_payload = config_response.json()
+        assert config_payload["debug"] is True
+        assert config_payload["defaultUsername"] == "debug-user"
+
         response = test_client.get("/meta/endpoints")
 
         assert response.status_code == 200

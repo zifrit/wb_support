@@ -49,10 +49,4 @@ class WbProxyService:
             duration = int((perf_counter() - started) * 1000)
             return response, wb_status, duration, request_context.request_id
         except AuthorizationError:
-            # If WB rejects the token, refresh it once and retry.
-            token = await self.auth_service.login(username=username)
-            credentials = self.credentials_resolver.resolve(username=username, token=token)
-            headers["Authorization"] = credentials.authorization
-            response, wb_status = await self.client.request(request_context, resolved_headers=headers)
-            duration = int((perf_counter() - started) * 1000)
-            return response, wb_status, duration, request_context.request_id
+            raise AuthorizationError(message="Stored token was rejected by WB. Re-login is required")
