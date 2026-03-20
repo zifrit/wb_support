@@ -27,10 +27,17 @@ export async function authLogin(username) {
   return parseResponse(response)
 }
 
-export async function authVerify(username) {
+export async function authVerify(username, code) {
   const response = await fetch(`${API_BASE_URL}/auth/verify`, {
-    headers: { 'X-Username': username }
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, code })
   })
+  return parseResponse(response)
+}
+
+export async function fetchMetaConfig() {
+  const response = await fetch(`${API_BASE_URL}/meta/config`)
   return parseResponse(response)
 }
 
