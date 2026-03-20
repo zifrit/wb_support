@@ -1,10 +1,18 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from backend.app.api.deps.auth import get_username_header
 from backend.app.api.deps.services import get_wb_proxy_service
-from backend.app.schemas.wb import NormQueryMinusRequest, NormQueryStatsRequest, SearchTextsRequest
+from backend.app.schemas.wb import (
+    AdvertsRequest,
+    FullstatsRequest,
+    NormQueryMinusRequest,
+    NormQueryStatsRequest,
+    OrdersRequest,
+    SearchTextsRequest,
+    StopRequest,
+)
 from backend.app.services.wb_endpoints import WB_ENDPOINTS
 from backend.app.services.wb_proxy_service import WbProxyService
 
@@ -19,16 +27,14 @@ def _success(data: Any, request_id: str, duration_ms: int, status: int) -> dict[
     }
 
 
-@router.get("/adverts")
+@router.post("/adverts")
 async def wb_adverts(
-    ids: str | None = Query(default=None),
-    statuses: str | None = Query(default=None),
-    payment_type: str | None = Query(default=None),
+    payload: AdvertsRequest,
     username: str = Depends(get_username_header),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_adverts"]
-    query_params = {"ids": ids, "statuses": statuses, "payment_type": payment_type}
+    query_params = payload.model_dump(exclude_none=True)
     query_params = {k: v for k, v in query_params.items() if v is not None}
     data, wb_status, duration, request_id = await service.execute(
         username=username,
@@ -40,11 +46,9 @@ async def wb_adverts(
     return _success(data, request_id, duration, wb_status)
 
 
-@router.get("/fullstats")
+@router.post("/fullstats")
 async def wb_fullstats(
-    ids: str,
-    beginDate: str,
-    endDate: str,
+    payload: FullstatsRequest,
     username: str = Depends(get_username_header),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
@@ -54,14 +58,14 @@ async def wb_fullstats(
         endpoint_id="wb_fullstats",
         method=method,
         url=url,
-        query_params={"ids": ids, "beginDate": beginDate, "endDate": endDate},
+        query_params=payload.model_dump(),
     )
     return _success(data, request_id, duration, wb_status)
 
 
-@router.get("/stop")
+@router.post("/stop")
 async def wb_stop(
-    id: str,
+    payload: StopRequest,
     username: str = Depends(get_username_header),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
@@ -71,7 +75,7 @@ async def wb_stop(
         endpoint_id="wb_stop",
         method=method,
         url=url,
-        query_params={"id": id},
+        query_params=payload.model_dump(),
     )
     return _success(data, request_id, duration, wb_status)
 
@@ -110,10 +114,9 @@ async def wb_normquery_get_minus(
     return _success(data, request_id, duration, wb_status)
 
 
-@router.get("/orders")
+@router.post("/orders")
 async def wb_orders(
-    dateFrom: str,
-    flag: int = 0,
+    payload: OrdersRequest,
     username: str = Depends(get_username_header),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
@@ -123,7 +126,7 @@ async def wb_orders(
         endpoint_id="wb_orders",
         method=method,
         url=url,
-        query_params={"dateFrom": dateFrom, "flag": flag},
+        query_params=payload.model_dump(),
     )
     return _success(data, request_id, duration, wb_status)
 

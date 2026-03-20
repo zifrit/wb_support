@@ -9,6 +9,27 @@ class NormQueryItem(BaseModel):
     nm_id: int
 
 
+class AdvertsRequest(BaseModel):
+    ids: str | None = None
+    statuses: str | None = None
+    payment_type: str | None = None
+
+
+class FullstatsRequest(BaseModel):
+    ids: str
+    beginDate: str
+    endDate: str
+
+
+class StopRequest(BaseModel):
+    id: str
+
+
+class OrdersRequest(BaseModel):
+    dateFrom: str
+    flag: int = 0
+
+
 class NormQueryStatsRequest(BaseModel):
     from_: date = Field(alias="from")
     to: date
