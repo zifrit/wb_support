@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class NormQueryItem(BaseModel):
@@ -13,6 +13,14 @@ class AdvertsRequest(BaseModel):
     ids: str | None = None
     statuses: str | None = None
     payment_type: str | None = None
+
+    @field_validator("payment_type")
+    def check_age(cls, v: str | None):
+        if v is None:
+            return v  # пропускаем None
+        if v.lower() not in ("cpm", "cpc"):
+            raise ValueError("payment_type must be either 'cpm' or 'cpc'")
+        return v
 
 
 class FullstatsRequest(BaseModel):

@@ -15,3 +15,6 @@ class PostgresAsyncSelectClient:
             rows = [list(row) for row in result.fetchall()]
             columns = list(result.keys())
         return {"columns": columns, "rows": rows}
+
+def pg_client(url: str) -> PostgresAsyncSelectClient:
+    return PostgresAsyncSelectClient(url)
