@@ -65,6 +65,9 @@ def test_meta_reports_debug_mode(monkeypatch, test_client):
 
 @pytest.mark.asyncio
 async def test_username_header_returns_debug_user_without_header(monkeypatch):
+    class DummyRequest:
+        url = "http://testserver/wb/orders"
+
     debug_settings = Settings(
         debug=True,
         debug_username="debug-user",
@@ -76,6 +79,6 @@ async def test_username_header_returns_debug_user_without_header(monkeypatch):
     )
     monkeypatch.setattr(auth_dep_module, "get_settings", lambda: debug_settings)
 
-    resolved = await auth_dep_module.get_username_header(None)
+    resolved = await auth_dep_module.get_username_header(DummyRequest(), None)
 
     assert resolved == "debug-user"

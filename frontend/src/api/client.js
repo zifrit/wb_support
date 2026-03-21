@@ -46,21 +46,14 @@ export async function fetchMetaEndpoints() {
   return parseResponse(response)
 }
 
-export async function runEndpoint({ method, path, username, query = {}, body = null }) {
-  const url = new URL(`${API_BASE_URL}${path}`)
-  Object.entries(query).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && `${value}`.trim() !== '') {
-      url.searchParams.set(key, value)
-    }
-  })
-
-  const response = await fetch(url, {
+export async function runEndpoint({ method, path, username, body = null }) {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',
       'X-Username': username
     },
-    body: method === 'GET' ? undefined : JSON.stringify(body ?? {})
+    body: JSON.stringify(body ?? {})
   })
   return parseResponse(response)
 }

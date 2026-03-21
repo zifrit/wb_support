@@ -1,7 +1,7 @@
 import pytest
 
 from backend.app.core.config import Settings
-from backend.app.core.exceptions import AuthorizationError, CredentialsNotFound
+from backend.app.core.exceptions import CredentialsNotFound
 from backend.app.services.auth_service import AuthService
 
 
@@ -48,12 +48,21 @@ class FakeAuthClient:
         return token not in self.invalid
 
 
+class FakeAdvPgClient:
+    def __init__(self):
+        self.tokens = {}
+
+    async def get_shop_token(self, shop_id: int) -> str | None:
+        return self.tokens.get(shop_id)
+
+
 @pytest.mark.asyncio
 async def test_login_sends_otp_without_storing_token():
     repo = FakeRepo()
     auth_client = FakeAuthClient()
+    adv_pg_client = FakeAdvPgClient()
     settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
-    service = AuthService(auth_client=auth_client, repository=repo, settings=settings)
+    service = AuthService(auth_client=auth_client, repository=repo, settings=settings, adv_pg_client=adv_pg_client)
 
     result = await service.login("alice")
 
@@ -66,8 +75,9 @@ async def test_login_sends_otp_without_storing_token():
 async def test_verify_code_stores_token():
     repo = FakeRepo()
     auth_client = FakeAuthClient()
+    adv_pg_client = FakeAdvPgClient()
     settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
-    service = AuthService(auth_client=auth_client, repository=repo, settings=settings)
+    service = AuthService(auth_client=auth_client, repository=repo, settings=settings, adv_pg_client=adv_pg_client)
 
     result = await service.verify_saved_token("alice", code="1234")
 
@@ -76,28 +86,32 @@ async def test_verify_code_stores_token():
 
 
 @pytest.mark.asyncio
-async def test_resolve_missing_token_raises():
+async def test_resolve_missing_shop_token_raises():
     settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
-    service = AuthService(auth_client=FakeAuthClient(), repository=FakeRepo(), settings=settings)
+    service = AuthService(
+        auth_client=FakeAuthClient(),
+        repository=FakeRepo(),
+        settings=settings,
+        adv_pg_client=FakeAdvPgClient(),
+    )
 
     with pytest.raises(CredentialsNotFound):
-        await service.resolve_token_for_wb("alice")
+        await service.resolve_token_for_wb(404)
 
 
 @pytest.mark.asyncio
-async def test_invalid_saved_token_requires_relogin():
-    repo = FakeRepo()
-    auth_client = FakeAuthClient()
+async def test_resolve_shop_token_returns_value_from_adv_db():
     settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
-    service = AuthService(auth_client=auth_client, repository=repo, settings=settings)
+    adv_pg_client = FakeAdvPgClient()
+    adv_pg_client.tokens[17] = "shop-token-17"
+    service = AuthService(
+        auth_client=FakeAuthClient(),
+        repository=FakeRepo(),
+        settings=settings,
+        adv_pg_client=adv_pg_client,
+    )
 
-    first = await auth_client.verify_code("alice", "1234")
-    await repo.upsert("alice", first)
-    auth_client.invalid.add(first)
-
-    with pytest.raises(AuthorizationError):
-        await service.resolve_token_for_wb("alice")
-    assert repo.storage == {}
+    assert await service.resolve_token_for_wb(17) == "shop-token-17"
 
 
 @pytest.mark.asyncio
@@ -121,11 +135,15 @@ async def test_admin_bypass_skips_external_calls():
         db_port=5432,
         db_name="wb_wrapper",
     )
-    service = AuthService(auth_client=StrictAuthClient(), repository=FakeRepo(), settings=settings)
+    service = AuthService(
+        auth_client=StrictAuthClient(),
+        repository=FakeRepo(),
+        settings=settings,
+        adv_pg_client=FakeAdvPgClient(),
+    )
 
     assert await service.login("admin") is True
     assert await service.verify_saved_token("admin", code="1234") is True
-    assert await service.resolve_token_for_wb("admin") == "admin-fixed-token"
 
 
 @pytest.mark.asyncio
@@ -150,8 +168,13 @@ async def test_debug_bypass_skips_external_calls():
         db_port=5432,
         db_name="wb_wrapper",
     )
-    service = AuthService(auth_client=StrictAuthClient(), repository=FakeRepo(), settings=settings)
+    service = AuthService(
+        auth_client=StrictAuthClient(),
+        repository=FakeRepo(),
+        settings=settings,
+        adv_pg_client=FakeAdvPgClient(),
+    )
 
     assert await service.login("alice") is True
     assert await service.verify_saved_token("alice", code="1234") is True
-    assert await service.resolve_token_for_wb("alice") == "debug-fixed-token"
+    assert await service.resolve_token_for_wb(999) == "debug-fixed-token"
