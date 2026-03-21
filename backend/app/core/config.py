@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     wb_timeout_seconds: int = 30
     wb_retries: int = 0
-    wb_client_secret: str = Field(default="", alias="WB_CLIENT_SECRET")
+    wb_client_secret: str = Field(default="",alias="WB_CLIENT_SECRET")
     wb_user_agent: str
     wb_authorization_template: str = "{token}"
     admin_username: str = "admin"
@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     db_port: int
     db_name: str
 
+    adv_db_user: str
+    adv_db_pass: str
+    adv_db_host: str
+    adv_db_port: int
+    adv_db_name: str
+
     clickhouse_url: str = "http://clickhouse:8123"
     clickhouse_user: str = "default"
     clickhouse_password: str = ""
@@ -65,6 +71,14 @@ class Settings(BaseSettings):
     @property
     def database_url_syncpg(self):
         return f"postgresql://{self.db_user}:{self.db_pass}@{self.db_host}:{self.db_port}/{self.db_name}"
+
+    @property
+    def adv_database_url_asyncpg(self):
+        return f"postgresql+asyncpg://{self.adv_db_user}:{self.adv_db_pass}@{self.adv_db_host}:{self.adv_db_port}/{self.adv_db_name}"
+
+    @property
+    def adv_database_url_syncpg(self):
+        return f"postgresql://{self.adv_db_user}:{self.adv_db_pass}@{self.adv_db_host}:{self.adv_db_port}/{self.adv_db_name}"
 
     @property
     def verify_token_url(self) -> str:

@@ -5,7 +5,6 @@ from typing import Any
 from backend.app.core.config import Settings
 from backend.app.core.exceptions import AuthorizationError
 from backend.app.external.wb_client.client import ExternalApiClient
-from backend.app.external.wb_client.credentials_resolver import WbCredentialsResolver
 from backend.app.external.wb_client.models import RequestContext
 from backend.app.services.auth_service import AuthService
 
@@ -14,7 +13,6 @@ from backend.app.services.auth_service import AuthService
 class WbProxyService:
     settings: Settings
     auth_service: AuthService
-    credentials_resolver: WbCredentialsResolver
     client: ExternalApiClient
 
     async def execute(
@@ -22,6 +20,7 @@ class WbProxyService:
         username: str,
         endpoint_id: str,
         method: str,
+        shop_id: int,
         url: str,
         query_params: dict[str, Any] | None = None,
         payload: dict[str, Any] | None = None,
@@ -29,19 +28,19 @@ class WbProxyService:
         request_context = RequestContext(
             rq_type=endpoint_id,
             method=method,
+            shop_id=shop_id,
             url=url,
             username=username,
             query_params=query_params,
             payload=payload,
         )
         started = perf_counter()
-        token = await self.auth_service.resolve_token_for_wb(username=username)
-        credentials = self.credentials_resolver.resolve(username=username, token=token)
+        token = await self.auth_service.resolve_token_for_wb(shop_id=shop_id)
 
         headers = {
-            "X-Client-Secret": credentials.client_secret,
-            "User-Agent": credentials.user_agent,
-            "Authorization": credentials.authorization,
+            "X-Client-Secret": self.settings.wb_client_secret,
+            "user-agent": self.settings.wb_user_agent,
+            "Authorization": token,
         }
 
         try:

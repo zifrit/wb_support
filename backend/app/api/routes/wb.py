@@ -2,7 +2,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from backend.app.api.deps.auth import get_username_header
+from backend.app.api.deps.auth import get_username_header, get_shop_id_query
 from backend.app.api.deps.services import get_wb_proxy_service
 from backend.app.schemas.wb import (
     AdvertsRequest,
@@ -31,6 +31,7 @@ def _success(data: Any, request_id: str, duration_ms: int, status: int) -> dict[
 async def wb_adverts(
     payload: AdvertsRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_adverts"]
@@ -40,6 +41,7 @@ async def wb_adverts(
         username=username,
         endpoint_id="wb_adverts",
         method=method,
+        shop_id=shop_id,
         url=url,
         query_params=query_params,
     )
@@ -50,6 +52,7 @@ async def wb_adverts(
 async def wb_fullstats(
     payload: FullstatsRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_fullstats"]
@@ -57,6 +60,7 @@ async def wb_fullstats(
         username=username,
         endpoint_id="wb_fullstats",
         method=method,
+        shop_id=shop_id,
         url=url,
         query_params=payload.model_dump(),
     )
@@ -67,6 +71,7 @@ async def wb_fullstats(
 async def wb_stop(
     payload: StopRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_stop"]
@@ -74,6 +79,7 @@ async def wb_stop(
         username=username,
         endpoint_id="wb_stop",
         method=method,
+        shop_id=shop_id,
         url=url,
         query_params=payload.model_dump(),
     )
@@ -84,6 +90,7 @@ async def wb_stop(
 async def wb_normquery_stats(
     payload: NormQueryStatsRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_normquery_stats"]
@@ -91,6 +98,7 @@ async def wb_normquery_stats(
         username=username,
         endpoint_id="wb_normquery_stats",
         method=method,
+        shop_id=shop_id,
         url=url,
         payload=payload.model_dump(by_alias=True),
     )
@@ -101,6 +109,7 @@ async def wb_normquery_stats(
 async def wb_normquery_get_minus(
     payload: NormQueryMinusRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_normquery_get_minus"]
@@ -108,6 +117,7 @@ async def wb_normquery_get_minus(
         username=username,
         endpoint_id="wb_normquery_get_minus",
         method=method,
+        shop_id=shop_id,
         url=url,
         payload=payload.model_dump(),
     )
@@ -118,6 +128,7 @@ async def wb_normquery_get_minus(
 async def wb_orders(
     payload: OrdersRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_orders"]
@@ -125,6 +136,7 @@ async def wb_orders(
         username=username,
         endpoint_id="wb_orders",
         method=method,
+        shop_id=shop_id,
         url=url,
         query_params=payload.model_dump(),
     )
@@ -135,6 +147,7 @@ async def wb_orders(
 async def wb_search_texts(
     payload: SearchTextsRequest,
     username: str = Depends(get_username_header),
+    shop_id: int = Depends(get_shop_id_query),
     service: WbProxyService = Depends(get_wb_proxy_service),
 ) -> dict[str, Any]:
     method, url = WB_ENDPOINTS["wb_search_report_product_search_texts"]
@@ -142,6 +155,7 @@ async def wb_search_texts(
         username=username,
         endpoint_id="wb_search_report_product_search_texts",
         method=method,
+        shop_id=shop_id,
         url=url,
         payload=payload.model_dump(),
     )

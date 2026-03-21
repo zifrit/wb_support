@@ -8,6 +8,7 @@ from uuid import uuid4
 class RequestContext:
     rq_type: str
     method: str
+    shop_id: int
     url: str
     username: str
     query_params: dict[str, Any] | None = None
