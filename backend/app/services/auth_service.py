@@ -43,20 +43,11 @@ class AuthService:
         raise AuthorizationError(message="User token is invalid. Re-login is required")
 
     async def resolve_token_for_wb(self, shop_id: int) -> str:
-        resp =  await self.adv_pg_client.get_shop_token(shop_id=shop_id)
-        return resp or ""
         if self.settings.debug:
             return self.settings.debug_authorization_token
-        if username == self.settings.admin_username:
-            return self.settings.admin_authorization_token
-        saved = await self.repository.get_by_username(username=username)
-        if saved is None:
-            raise CredentialsNotFound()
 
-        valid = await self.auth_client.verify_token(saved.token)
-        if valid:
-            await self.repository.mark_verified(username=username)
-            return saved.token
+        token = await self.adv_pg_client.get_shop_token(shop_id=shop_id)
+        if token:
+            return token
 
-        await self.repository.delete(username=username)
-        raise AuthorizationError(message="Stored user token is invalid. Re-login is required")
+        raise CredentialsNotFound(message="Shop token not found")

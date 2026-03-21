@@ -9,7 +9,11 @@ class NormQueryItem(BaseModel):
     nm_id: int
 
 
-class AdvertsRequest(BaseModel):
+class ShopScopedRequest(BaseModel):
+    shop_id: int
+
+
+class AdvertsRequest(ShopScopedRequest):
     ids: str | None = None
     statuses: str | None = None
     payment_type: str | None = None
@@ -23,28 +27,28 @@ class AdvertsRequest(BaseModel):
         return v
 
 
-class FullstatsRequest(BaseModel):
+class FullstatsRequest(ShopScopedRequest):
     ids: str
     beginDate: str
     endDate: str
 
 
-class StopRequest(BaseModel):
+class StopRequest(ShopScopedRequest):
     id: str
 
 
-class OrdersRequest(BaseModel):
+class OrdersRequest(ShopScopedRequest):
     dateFrom: str
     flag: int = 0
 
 
-class NormQueryStatsRequest(BaseModel):
+class NormQueryStatsRequest(ShopScopedRequest):
     from_: date = Field(alias="from")
     to: date
     items: list[NormQueryItem]
 
 
-class NormQueryMinusRequest(BaseModel):
+class NormQueryMinusRequest(ShopScopedRequest):
     items: list[NormQueryItem]
 
 
@@ -58,7 +62,7 @@ class SearchOrder(BaseModel):
     mode: str
 
 
-class SearchTextsRequest(BaseModel):
+class SearchTextsRequest(ShopScopedRequest):
     currentPeriod: SearchPeriod
     pastPeriod: SearchPeriod
     nmIds: list[int]

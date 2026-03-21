@@ -1,25 +1,46 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { runEndpoint } from '../api/client'
 import JsonViewer from '../components/JsonViewer'
 
+const SIMPLE_FORM_ENDPOINTS = new Set(['wb_adverts', 'wb_fullstats', 'wb_stop', 'wb_orders'])
+
 export default function EndpointRunner({ endpoint, username, debugEnabled }) {
-  const [queryState, setQueryState] = useState({})
+  const [fieldState, setFieldState] = useState({})
   const [bodyState, setBodyState] = useState('{}')
   const [result, setResult] = useState(null)
   const [running, setRunning] = useState(false)
 
-  const queryFields = endpoint?.query || []
+  const formFields = endpoint?.query || []
+  const simpleFormMode = endpoint ? SIMPLE_FORM_ENDPOINTS.has(endpoint.id) : false
+
+  useEffect(() => {
+    setFieldState({})
+    setBodyState('{}')
+    setResult(null)
+  }, [endpoint?.id])
 
   const bodyError = useMemo(() => {
-    if (!endpoint || endpoint.method === 'GET') return ''
+    if (!endpoint || simpleFormMode || !endpoint.body) return ''
     try {
       JSON.parse(bodyState || '{}')
       return ''
     } catch {
       return 'Body must be valid JSON'
     }
-  }, [endpoint, bodyState])
+  }, [endpoint, bodyState, simpleFormMode])
+
+  const missingRequiredField = useMemo(() => {
+    if (!endpoint) return ''
+    for (const field of formFields) {
+      if (!field.required) continue
+      const value = fieldState[field.name]
+      if (value === undefined || value === null || `${value}`.trim() === '') {
+        return field.name
+      }
+    }
+    return ''
+  }, [endpoint, formFields, fieldState])
 
   if (!endpoint) {
     return (
@@ -31,15 +52,24 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
   }
 
   async function run() {
-    if (bodyError) return
+    if (bodyError || missingRequiredField) return
     setRunning(true)
     try {
-      const body = endpoint.method === 'GET' ? null : JSON.parse(bodyState || '{}')
+      let body
+      if (simpleFormMode) {
+        body = Object.fromEntries(
+          Object.entries(fieldState).filter(([, value]) => value !== undefined && value !== null && `${value}`.trim() !== '')
+        )
+      } else {
+        body = endpoint.body ? JSON.parse(bodyState || '{}') : {}
+        if (fieldState.shop_id !== undefined && `${fieldState.shop_id}`.trim() !== '') {
+          body.shop_id = Number(fieldState.shop_id)
+        }
+      }
       const response = await runEndpoint({
         method: endpoint.method,
         path: endpoint.path,
         username,
-        query: queryState,
         body
       })
       setResult({ ok: true, status: response.status, payload: response.data })
@@ -64,7 +94,7 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
       </div>
 
       <div className="stack">
-        {queryFields.map((field) => (
+        {formFields.map((field) => (
           <label key={field.name} className="field">
             <span>
               {field.name}
@@ -73,13 +103,13 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
             <input
               placeholder={field.description}
               required={field.required}
-              value={queryState[field.name] || ''}
-              onChange={(e) => setQueryState((prev) => ({ ...prev, [field.name]: e.target.value }))}
+              value={fieldState[field.name] || ''}
+              onChange={(e) => setFieldState((prev) => ({ ...prev, [field.name]: e.target.value }))}
             />
           </label>
         ))}
 
-        {endpoint.method !== 'GET' && (
+        {!simpleFormMode && endpoint.body && (
           <label className="field">
             <span>JSON body</span>
             <textarea rows={10} value={bodyState} onChange={(e) => setBodyState(e.target.value)} />
@@ -87,9 +117,11 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
           </label>
         )}
 
+        {missingRequiredField && <span className="error">Заполните обязательное поле: {missingRequiredField}</span>}
+
         <button
           className="primary-button"
-          disabled={running || (!debugEnabled && !username) || Boolean(bodyError)}
+          disabled={running || (!debugEnabled && !username) || Boolean(bodyError) || Boolean(missingRequiredField)}
           onClick={run}
         >
           {running ? 'Выполняю запрос...' : 'Запустить'}

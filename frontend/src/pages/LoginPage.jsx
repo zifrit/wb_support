@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { authLogin, authVerify } from '../api/client'
 
+const OTP_COOLDOWN_MS = 3 * 60 * 1000
+
 function normalizePhoneDigits(value) {
   const digits = value.replace(/\D/g, '')
   if (!digits) return ''
@@ -52,6 +54,17 @@ function isValidRussianPhone(value) {
   return /^7\d{10}$/.test(toCanonicalPhone(value))
 }
 
+function getCooldownKey(phone) {
+  return `wb_otp_cooldown_until:${phone || 'anonymous'}`
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000))
+  const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0')
+  const seconds = String(totalSeconds % 60).padStart(2, '0')
+  return `${minutes}:${seconds}`
+}
+
 export default function LoginPage({
   username,
   onUsernameChange,
@@ -65,22 +78,60 @@ export default function LoginPage({
   const [code, setCode] = useState('')
   const [awaitingCode, setAwaitingCode] = useState(false)
   const [phoneDraft, setPhoneDraft] = useState(debugEnabled ? username : formatPhone(username))
+  const [cooldownUntil, setCooldownUntil] = useState(0)
+  const [nowTs, setNowTs] = useState(Date.now())
 
   const normalizedPhone = toCanonicalPhone(username)
   const phoneError =
     !debugEnabled && username && !isValidRussianPhone(username) ? 'Введите номер в российском формате' : ''
+  const cooldownLeftMs = Math.max(0, cooldownUntil - nowTs)
+  const cooldownActive = !debugEnabled && cooldownLeftMs > 0
 
   useEffect(() => {
     setPhoneDraft(debugEnabled ? username : formatPhone(username))
-  }, [debugEnabled])
+  }, [debugEnabled, username])
+
+  useEffect(() => {
+    if (debugEnabled || !normalizedPhone) {
+      setCooldownUntil(0)
+      return
+    }
+
+    const savedValue = window.localStorage.getItem(getCooldownKey(normalizedPhone))
+    const parsed = Number(savedValue || 0)
+    if (parsed > Date.now()) {
+      setCooldownUntil(parsed)
+      setAwaitingCode(true)
+    } else {
+      setCooldownUntil(0)
+      if (savedValue) {
+        window.localStorage.removeItem(getCooldownKey(normalizedPhone))
+      }
+    }
+  }, [debugEnabled, normalizedPhone])
+
+  useEffect(() => {
+    if (!cooldownActive) return undefined
+    const intervalId = window.setInterval(() => {
+      setNowTs(Date.now())
+    }, 1000)
+    return () => window.clearInterval(intervalId)
+  }, [cooldownActive])
+
+  useEffect(() => {
+    if (!cooldownUntil || cooldownUntil > nowTs || !normalizedPhone) return
+    window.localStorage.removeItem(getCooldownKey(normalizedPhone))
+    setCooldownUntil(0)
+  }, [cooldownUntil, nowTs, normalizedPhone])
 
   function handlePhoneChange(value) {
     setPhoneDraft(value)
     onUsernameChange(debugEnabled ? value : normalizePhoneDigits(value))
-    if (awaitingCode) {
+    if (awaitingCode && toCanonicalPhone(value) !== normalizedPhone) {
       setCode('')
       setAwaitingCode(false)
       setMessage('')
+      setCooldownUntil(0)
     }
   }
 
@@ -108,6 +159,10 @@ export default function LoginPage({
       await authLogin(normalizedPhone)
       onUsernameChange(normalizedPhone)
       setAwaitingCode(true)
+      const nextCooldownUntil = Date.now() + OTP_COOLDOWN_MS
+      setCooldownUntil(nextCooldownUntil)
+      setNowTs(Date.now())
+      window.localStorage.setItem(getCooldownKey(normalizedPhone), String(nextCooldownUntil))
       setMessage('Код отправлен. Введите его ниже.')
     } catch (error) {
       setMessage(error?.data?.error?.message || 'Login failed')
@@ -165,8 +220,16 @@ export default function LoginPage({
             {phoneError && <span className="error">{phoneError}</span>}
           </label>
 
-          <button className="primary-button" disabled={loading}>
-            {loading ? 'Отправляю...' : debugEnabled ? 'Продолжить в debug' : awaitingCode ? 'Отправить код повторно' : 'Получить код'}
+          <button className="primary-button" disabled={loading || cooldownActive}>
+            {loading
+              ? 'Отправляю...'
+              : debugEnabled
+                ? 'Продолжить в debug'
+                : cooldownActive
+                  ? `Повторная отправка через ${formatCountdown(cooldownLeftMs)}`
+                  : awaitingCode
+                    ? 'Отправить код повторно'
+                    : 'Получить код'}
           </button>
         </form>
 
