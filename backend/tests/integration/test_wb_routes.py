@@ -107,3 +107,30 @@ def test_wb_returns_422_when_shop_id_is_missing(monkeypatch, test_client):
     response = test_client.post("/wb/adverts", json={"ids": "1,2"}, headers={"X-Username": username})
 
     assert response.status_code == 422
+    assert response.json()["error"]["message"] == "Missing required fields: shop_id"
+    assert response.json()["error"]["details"]["missingFields"] == ["shop_id"]
+
+
+@pytest.mark.usefixtures("test_client")
+def test_wb_json_body_validation_returns_compact_missing_fields(monkeypatch, test_client):
+    async def fake_send_code(self, username: str):
+        return True
+
+    async def fake_verify_code(self, username: str, code: str):
+        return f"db-token-{username}"
+
+    monkeypatch.setattr(ExternalAuthClient, "send_code", fake_send_code)
+    monkeypatch.setattr(ExternalAuthClient, "verify_code", fake_verify_code)
+
+    username = f"user-{uuid.uuid4().hex[:8]}"
+    test_client.post("/auth/login", json={"username": username})
+    test_client.post("/auth/verify", json={"username": username, "code": "1234"})
+
+    response = test_client.post("/wb/normquery/stats", json={"shop_id": 10}, headers={"X-Username": username})
+
+    assert response.status_code == 422
+    payload = response.json()
+    assert payload["ok"] is False
+    assert payload["error"]["message"] == "Missing required fields: from, to, items"
+    assert payload["error"]["details"]["missingFields"] == ["from", "to", "items"]
+    assert payload["error"]["details"]["invalidFields"] == []
