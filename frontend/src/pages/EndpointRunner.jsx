@@ -4,6 +4,31 @@ import { runEndpoint } from '../api/client'
 import JsonViewer from '../components/JsonViewer'
 
 const SIMPLE_FORM_ENDPOINTS = new Set(['wb_adverts', 'wb_fullstats', 'wb_stop', 'wb_orders'])
+const ENDPOINT_STATE_TTL_MS = 60 * 60 * 1000
+
+function getEndpointStorageKey(endpointId, username) {
+  return `wb_endpoint_state:${username || 'guest'}:${endpointId}`
+}
+
+function loadEndpointState(endpointId, username) {
+  const key = getEndpointStorageKey(endpointId, username)
+  const raw = window.localStorage.getItem(key)
+  if (!raw) {
+    return null
+  }
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (!parsed?.savedAt || Date.now() - parsed.savedAt > ENDPOINT_STATE_TTL_MS) {
+      window.localStorage.removeItem(key)
+      return null
+    }
+    return parsed
+  } catch {
+    window.localStorage.removeItem(key)
+    return null
+  }
+}
 
 export default function EndpointRunner({ endpoint, username, debugEnabled }) {
   const [fieldState, setFieldState] = useState({})
@@ -15,10 +40,33 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
   const simpleFormMode = endpoint ? SIMPLE_FORM_ENDPOINTS.has(endpoint.id) : false
 
   useEffect(() => {
-    setFieldState({})
-    setBodyState('{}')
-    setResult(null)
-  }, [endpoint?.id])
+    if (!endpoint) {
+      setFieldState({})
+      setBodyState('{}')
+      setResult(null)
+      return
+    }
+
+    const savedState = loadEndpointState(endpoint.id, username)
+    setFieldState(savedState?.fieldState || {})
+    setBodyState(savedState?.bodyState || '{}')
+    setResult(savedState?.result || null)
+  }, [endpoint, username])
+
+  useEffect(() => {
+    if (!endpoint) return
+
+    const key = getEndpointStorageKey(endpoint.id, username)
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({
+        savedAt: Date.now(),
+        fieldState,
+        bodyState,
+        result
+      })
+    )
+  }, [bodyState, endpoint, fieldState, result, username])
 
   const bodyError = useMemo(() => {
     if (!endpoint || simpleFormMode || !endpoint.body) return ''
@@ -88,7 +136,6 @@ export default function EndpointRunner({ endpoint, username, debugEnabled }) {
           <h2>{endpoint.title}</h2>
         </div>
         <div className="runner-route">
-          <strong>{endpoint.method}</strong>
           <span>{endpoint.path}</span>
         </div>
       </div>
