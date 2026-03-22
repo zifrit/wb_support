@@ -178,29 +178,6 @@ export default function App() {
 
   return (
     <main className="app-shell">
-      <section className="app-hero">
-        <div>
-          <p className="eyebrow">WB wrapper console</p>
-          <h1>WB API Explorer</h1>
-        </div>
-
-        <div className="hero-panel">
-          <div>
-            <span className="panel-label">Активный пользователь</span>
-            <strong>{effectiveUsername || 'Не определен'}</strong>
-          </div>
-          <div>
-            <span className="panel-label">Режим</span>
-            <strong>{debugEnabled ? 'Debug bypass' : 'Protected access'}</strong>
-          </div>
-          {!debugEnabled && (
-            <button type="button" className="ghost-button" onClick={handleLogout}>
-              Выйти
-            </button>
-          )}
-        </div>
-      </section>
-
       <div className="workspace-grid">
         {loadingEndpoints ? (
           <section className="surface-card">
@@ -217,6 +194,20 @@ export default function App() {
         )}
 
         <EndpointRunner endpoint={selectedEndpoint} username={effectiveUsername} debugEnabled={debugEnabled} />
+
+        <aside className="workspace-sidebar">
+          <div className="user-panel">
+            <div>
+              <span className="panel-label">Активный пользователь</span>
+              <strong>{effectiveUsername || 'Не определен'}</strong>
+            </div>
+            {!debugEnabled && (
+              <button type="button" className="ghost-button" onClick={handleLogout}>
+                Выйти
+              </button>
+            )}
+          </div>
+        </aside>
       </div>
     </main>
   )
