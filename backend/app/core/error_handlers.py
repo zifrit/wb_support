@@ -5,6 +5,41 @@ from fastapi.responses import JSONResponse
 from backend.app.core.exceptions import AppError
 
 
+def _format_validation_path(path: tuple) -> str:
+    relevant = [str(part) for part in path if part != "body"]
+    return ".".join(relevant) if relevant else "body"
+
+
+def _format_validation_details(exc: RequestValidationError) -> tuple[str, list[str], list[dict]]:
+    missing_fields: list[str] = []
+    invalid_fields: list[dict] = []
+
+    for error in exc.errors():
+        field_path = _format_validation_path(tuple(error.get("loc", ())))
+        error_type = error.get("type", "")
+        message = error.get("msg", "Invalid value")
+
+        if error_type == "missing":
+            missing_fields.append(field_path)
+            continue
+
+        invalid_fields.append(
+            {
+                "field": field_path,
+                "message": message,
+                "type": error_type,
+            }
+        )
+
+    unique_missing_fields = list(dict.fromkeys(missing_fields))
+    if unique_missing_fields:
+        message = f"Missing required fields: {', '.join(unique_missing_fields)}"
+    else:
+        message = "Request validation failed"
+
+    return message, unique_missing_fields, invalid_fields
+
+
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
@@ -37,15 +72,20 @@ def register_error_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    async def validation_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
+        message, missing_fields, invalid_fields = _format_validation_details(exc)
         return JSONResponse(
             status_code=422,
             content={
                 "ok": False,
                 "error": {
                     "code": "VALIDATION_ERROR",
-                    "message": "Request validation failed",
-                    "details": exc.errors(),
+                    "message": message,
+                    "details": {
+                        "missingFields": missing_fields,
+                        "invalidFields": invalid_fields,
+                    },
                 },
+                "meta": {"requestId": getattr(request.state, "request_id", None)},
             },
         )
