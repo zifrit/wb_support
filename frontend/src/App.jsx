@@ -145,9 +145,15 @@ export default function App() {
 
   function handleLogout() {
     setIsAuthorized(false)
+    setUsername('')
+    setMetaError('')
     if (!debugEnabled) {
       localStorage.removeItem(AUTH_FLAG_KEY)
     }
+    localStorage.removeItem(USERNAME_KEY)
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith('wb_otp_cooldown_until:'))
+      .forEach((key) => localStorage.removeItem(key))
     setEndpoints([])
     setSelectedId('')
     navigate(LOGIN_ROUTE)

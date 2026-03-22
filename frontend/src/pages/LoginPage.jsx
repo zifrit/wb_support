@@ -163,7 +163,6 @@ export default function LoginPage({
       setCooldownUntil(nextCooldownUntil)
       setNowTs(Date.now())
       window.localStorage.setItem(getCooldownKey(normalizedPhone), String(nextCooldownUntil))
-      setMessage('Код отправлен. Введите его ниже.')
     } catch (error) {
       setMessage(error?.data?.error?.message || 'Login failed')
     } finally {

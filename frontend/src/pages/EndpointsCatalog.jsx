@@ -16,7 +16,6 @@ export default function EndpointsCatalog({ endpoints, selectedId, onSelect }) {
             className={`endpoint-card ${selectedId === endpoint.id ? 'selected' : ''}`}
             onClick={() => onSelect(endpoint.id)}
           >
-            <span className="endpoint-method">{endpoint.method}</span>
             <strong>{endpoint.title}</strong>
             <span className="endpoint-path">{endpoint.path}</span>
           </button>

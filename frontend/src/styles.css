@@ -321,13 +321,22 @@ button:disabled {
   color: #edf4ff;
 }
 
+.match-counter {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .json-raw {
   margin: 0;
   background: #0d223a;
   color: #edf4ff;
   border-radius: 18px;
   padding: 14px;
-  max-height: 360px;
+  max-height: 540px;
   overflow: auto;
 }
 
@@ -336,7 +345,7 @@ button:disabled {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.55);
   padding: 14px;
-  max-height: 360px;
+  max-height: 540px;
   overflow: auto;
 }
 
@@ -356,6 +365,11 @@ button:disabled {
 .hit {
   background: #fff2a8;
   border-radius: 6px;
+}
+
+.hit.active {
+  background: #ffd66b;
+  box-shadow: 0 0 0 2px rgba(36, 87, 214, 0.18);
 }
 
 .error {
