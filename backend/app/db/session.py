@@ -11,7 +11,7 @@ from backend.app.core.config import get_settings
 from backend.app.db.helper import get_database_helper
 
 settings = get_settings()
-database_url_async = settings.test_database_url_async if not settings.debug else settings.database_url_asyncpg
+database_url_async = settings.test_database_url_async if settings.debug else settings.database_url_asyncpg
 db_helper = get_database_helper(database_url_async)
 ALEMBIC_INI_PATH = str(Path(__file__).resolve().parents[2] / "alembic.ini")
 

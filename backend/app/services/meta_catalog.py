@@ -30,17 +30,6 @@ def get_endpoint_catalog() -> list[EndpointMeta]:
             ],
         ),
         EndpointMeta(
-            id="wb_stop",
-            title="Завершение кампании",
-            method="POST",
-            path="/wb/stop",
-            requiresUsername=True,
-            query=[
-                FieldMeta(name="shop_id", type="int", required=True, description="ID магазина"),
-                FieldMeta(name="id", type="string", required=True, description="Campaign id"),
-            ],
-        ),
-        EndpointMeta(
             id="wb_normquery_stats",
             title="Статистика поисковых кластеров",
             method="POST",

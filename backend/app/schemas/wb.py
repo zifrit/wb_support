@@ -33,10 +33,6 @@ class FullstatsRequest(ShopScopedRequest):
     endDate: str
 
 
-class StopRequest(ShopScopedRequest):
-    id: str
-
-
 class OrdersRequest(ShopScopedRequest):
     dateFrom: str
     flag: int = 0
