@@ -6,16 +6,13 @@ const OTP_COOLDOWN_MS = 3 * 60 * 1000
 function normalizePhoneDigits(value) {
   const digits = value.replace(/\D/g, '')
   if (!digits) return ''
-  if (digits.length === 11 && digits.startsWith('8')) {
-    return `7${digits.slice(1)}`
+  if (digits.startsWith('8')) {
+    return `7${digits.slice(1, 11)}`
   }
-  if (digits.length > 11) {
-    if (digits.startsWith('8')) {
-      return `7${digits.slice(1, 11)}`
-    }
+  if (digits.startsWith('7')) {
     return digits.slice(0, 11)
   }
-  return digits
+  return digits.slice(0, 10)
 }
 
 function toCanonicalPhone(value) {
@@ -25,6 +22,14 @@ function toCanonicalPhone(value) {
   }
   if (digits.length === 11 && digits.startsWith('8')) {
     return `7${digits.slice(1)}`
+  }
+  return digits
+}
+
+function getEditablePhone(value) {
+  const digits = normalizePhoneDigits(value)
+  if (digits.length === 11 && digits.startsWith('7')) {
+    return digits.slice(1)
   }
   return digits
 }
@@ -78,6 +83,7 @@ export default function LoginPage({
   const [code, setCode] = useState('')
   const [awaitingCode, setAwaitingCode] = useState(false)
   const [phoneDraft, setPhoneDraft] = useState(debugEnabled ? username : formatPhone(username))
+  const [isPhoneFocused, setIsPhoneFocused] = useState(false)
   const [cooldownUntil, setCooldownUntil] = useState(0)
   const [nowTs, setNowTs] = useState(Date.now())
 
@@ -88,8 +94,12 @@ export default function LoginPage({
   const cooldownActive = !debugEnabled && cooldownLeftMs > 0
 
   useEffect(() => {
-    setPhoneDraft(debugEnabled ? username : formatPhone(username))
-  }, [debugEnabled, username])
+    if (debugEnabled) {
+      setPhoneDraft(username)
+      return
+    }
+    setPhoneDraft(isPhoneFocused ? getEditablePhone(username) : formatPhone(username))
+  }, [debugEnabled, isPhoneFocused, username])
 
   useEffect(() => {
     if (debugEnabled || !normalizedPhone) {
@@ -125,9 +135,10 @@ export default function LoginPage({
   }, [cooldownUntil, nowTs, normalizedPhone])
 
   function handlePhoneChange(value) {
-    setPhoneDraft(value)
-    onUsernameChange(debugEnabled ? value : normalizePhoneDigits(value))
-    if (awaitingCode && toCanonicalPhone(value) !== normalizedPhone) {
+    const nextValue = debugEnabled ? value : normalizePhoneDigits(value)
+    setPhoneDraft(debugEnabled ? value : getEditablePhone(nextValue))
+    onUsernameChange(nextValue)
+    if (awaitingCode && toCanonicalPhone(nextValue) !== normalizedPhone) {
       setCode('')
       setAwaitingCode(false)
       setMessage('')
@@ -137,7 +148,12 @@ export default function LoginPage({
 
   function handlePhoneBlur() {
     if (debugEnabled) return
-    setPhoneDraft(formatPhone(username))
+    setIsPhoneFocused(false)
+  }
+
+  function handlePhoneFocus() {
+    if (debugEnabled) return
+    setIsPhoneFocused(true)
   }
 
   async function handlePhoneSubmit(event) {
@@ -158,6 +174,7 @@ export default function LoginPage({
       }
       await authLogin(normalizedPhone)
       onUsernameChange(normalizedPhone)
+      setIsPhoneFocused(false)
       setAwaitingCode(true)
       const nextCooldownUntil = Date.now() + OTP_COOLDOWN_MS
       setCooldownUntil(nextCooldownUntil)
@@ -211,10 +228,12 @@ export default function LoginPage({
             <input
               value={debugEnabled ? username : phoneDraft}
               onChange={(e) => handlePhoneChange(e.target.value)}
+              onFocus={handlePhoneFocus}
               onBlur={handlePhoneBlur}
               placeholder={debugEnabled ? debugUsername || 'debug' : '+7 (999) 123-45-67'}
               required={!debugEnabled}
               inputMode={debugEnabled ? 'text' : 'tel'}
+              maxLength={debugEnabled ? undefined : 18}
             />
             {phoneError && <span className="error">{phoneError}</span>}
           </label>

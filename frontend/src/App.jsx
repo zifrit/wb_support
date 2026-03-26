@@ -6,9 +6,11 @@ import EndpointRunner from './pages/EndpointRunner'
 import LoginPage from './pages/LoginPage'
 
 const AUTH_FLAG_KEY = 'wb_auth_granted'
+const AUTH_EXPIRES_AT_KEY = 'wb_auth_expires_at'
 const USERNAME_KEY = 'wb_username'
 const LOGIN_ROUTE = '/login'
 const APP_ROUTE = '/endpoints'
+const SESSION_TTL_MS = 3 * 24 * 60 * 60 * 1000
 
 function getCurrentPath() {
   return window.location.pathname || '/'
@@ -20,10 +22,26 @@ function navigate(path, replace = false) {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
+function hasValidSession() {
+  const authGranted = localStorage.getItem(AUTH_FLAG_KEY) === 'true'
+  const expiresAt = Number(localStorage.getItem(AUTH_EXPIRES_AT_KEY) || 0)
+  return authGranted && expiresAt > Date.now()
+}
+
+function persistSession() {
+  localStorage.setItem(AUTH_FLAG_KEY, 'true')
+  localStorage.setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + SESSION_TTL_MS))
+}
+
+function clearSessionStorage() {
+  localStorage.removeItem(AUTH_FLAG_KEY)
+  localStorage.removeItem(AUTH_EXPIRES_AT_KEY)
+}
+
 export default function App() {
   const [path, setPath] = useState(getCurrentPath())
   const [username, setUsername] = useState(localStorage.getItem(USERNAME_KEY) || '')
-  const [isAuthorized, setIsAuthorized] = useState(localStorage.getItem(AUTH_FLAG_KEY) === 'true')
+  const [isAuthorized, setIsAuthorized] = useState(hasValidSession())
   const [endpoints, setEndpoints] = useState([])
   const [selectedId, setSelectedId] = useState('')
   const [loadingEndpoints, setLoadingEndpoints] = useState(false)
@@ -42,12 +60,17 @@ export default function App() {
 
   useEffect(() => {
     function syncPath() {
+      if (!debugEnabled && !hasValidSession()) {
+        clearSessionStorage()
+        setIsAuthorized(false)
+        setUsername('')
+      }
       setPath(getCurrentPath())
     }
 
     window.addEventListener('popstate', syncPath)
     return () => window.removeEventListener('popstate', syncPath)
-  }, [])
+  }, [debugEnabled])
 
   useEffect(() => {
     localStorage.setItem(USERNAME_KEY, username)
@@ -114,32 +137,42 @@ export default function App() {
 
     if (debugEnabled) {
       setIsAuthorized(true)
-      localStorage.setItem(AUTH_FLAG_KEY, 'true')
+      persistSession()
       if (path === '/' || path === LOGIN_ROUTE) {
         navigate(APP_ROUTE, true)
       }
       return
     }
 
+    if (!hasValidSession()) {
+      clearSessionStorage()
+      if (isAuthorized) {
+        setIsAuthorized(false)
+        setUsername('')
+        setEndpoints([])
+        setSelectedId('')
+      }
+    }
+
     if (path === '/') {
-      navigate(shouldOpenApp ? APP_ROUTE : LOGIN_ROUTE, true)
+      navigate(hasValidSession() ? APP_ROUTE : LOGIN_ROUTE, true)
       return
     }
 
-    if (!shouldOpenApp && path !== LOGIN_ROUTE) {
+    if (!hasValidSession() && path !== LOGIN_ROUTE) {
       navigate(LOGIN_ROUTE, true)
       return
     }
 
-    if (shouldOpenApp && path === LOGIN_ROUTE) {
+    if (hasValidSession() && path === LOGIN_ROUTE) {
       navigate(APP_ROUTE, true)
     }
-  }, [debugEnabled, loadingConfig, path, shouldOpenApp])
+  }, [debugEnabled, isAuthorized, loadingConfig, path, shouldOpenApp])
 
   function handleAuthSuccess(authorizedUser) {
     setUsername(authorizedUser)
     setIsAuthorized(true)
-    localStorage.setItem(AUTH_FLAG_KEY, 'true')
+    persistSession()
     navigate(APP_ROUTE)
   }
 
@@ -147,9 +180,7 @@ export default function App() {
     setIsAuthorized(false)
     setUsername('')
     setMetaError('')
-    if (!debugEnabled) {
-      localStorage.removeItem(AUTH_FLAG_KEY)
-    }
+    clearSessionStorage()
     localStorage.removeItem(USERNAME_KEY)
     Object.keys(localStorage)
       .filter((key) => key.startsWith('wb_otp_cooldown_until:'))
