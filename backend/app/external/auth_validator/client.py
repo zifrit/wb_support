@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import httpx
 
 from backend.app.core.config import Settings
-from backend.app.core.exceptions import AuthorizationError, TransportError
+from backend.app.core.exceptions import AuthorizationError, TransportError, PermissionDeniedError
 
 
 @dataclass
@@ -33,6 +33,10 @@ class ExternalAuthClient:
             raise TransportError(message="Auth verify code request timeout", status_code=504, details={"reason": str(exc)}) from exc
         except httpx.HTTPError as exc:
             raise TransportError(message="Auth verify code request failed", status_code=502, details={"reason": str(exc)}) from exc
+
+        if response.status_code == 403:
+            details = self._safe_json(response)
+            raise PermissionDeniedError(message="Permission denied", details={"status": response.status_code, "body": details})
 
         if response.status_code >= 300:
             details = self._safe_json(response)

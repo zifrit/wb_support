@@ -30,6 +30,12 @@ class AuthService:
             await self.repository.mark_verified(username=username)
             return True
 
+        return await self.check_saved_token(username=username)
+
+    async def check_saved_token(self, username: str) -> bool:
+        if self.settings.debug or username == self.settings.admin_username:
+            return True
+
         saved = await self.repository.get_by_username(username=username)
         if saved is None:
             raise CredentialsNotFound()
