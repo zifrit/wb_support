@@ -1,7 +1,6 @@
 from functools import lru_cache
 
 from pathlib import Path
-from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -22,20 +21,20 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     debug: bool = False
+    testing: bool = False
     debug_username: str = "debug"
+    admin_username: str = "admin"
 
     cors_origins: str = "http://localhost:3000"
 
     wb_timeout_seconds: int = 30
     wb_retries: int = 0
-    wb_client_secret: str = Field(default="",alias="WB_CLIENT_SECRET")
+    wb_client_secret: str = ""
     wb_user_agent: str
-    wb_authorization_template: str = "{token}"
-    admin_username: str = "admin"
-    admin_authorization_token: str = Field(default="admin-local-token", alias="ADMIN_AUTHORIZATION_TOKEN")
-    debug_authorization_token: str = Field(default="debug-local-token", alias="DEBUG_AUTHORIZATION_TOKEN")
 
-    auth_base_url: str = Field(default="http://host.docker.internal:5005", alias="AUTH_BASE_URL")
+    debug_authorization_token: str = "debug-local-token"
+
+    auth_base_url: str = "http://host.docker.internal:5005"
     auth_send_code: str = "/api/authentication/support/send-otp"
     auth_verify_code: str = "/api/authentication/support/check-otp"
     auth_verify_token: str = "/api/authentication/support/verify-token"
