@@ -1,7 +1,7 @@
 import pytest
 
 from backend.app.core.config import Settings
-from backend.app.core.exceptions import CredentialsNotFound
+from backend.app.core.exceptions import AuthorizationError, CredentialsNotFound
 from backend.app.services.auth_service import AuthService
 
 
@@ -83,6 +83,51 @@ async def test_verify_code_stores_token():
 
     assert result is True
     assert repo.storage["alice"] == "token-alice-1234"
+
+
+@pytest.mark.asyncio
+async def test_check_saved_token_returns_true_for_valid_saved_token():
+    repo = FakeRepo()
+    repo.storage["alice"] = "saved-token"
+    auth_client = FakeAuthClient()
+    adv_pg_client = FakeAdvPgClient()
+    settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
+    service = AuthService(auth_client=auth_client, repository=repo, settings=settings, adv_pg_client=adv_pg_client)
+
+    result = await service.check_saved_token("alice")
+
+    assert result is True
+    assert repo.storage["alice"] == "saved-token"
+
+
+@pytest.mark.asyncio
+async def test_check_saved_token_deletes_invalid_saved_token():
+    repo = FakeRepo()
+    repo.storage["alice"] = "saved-token"
+    auth_client = FakeAuthClient()
+    auth_client.invalid.add("saved-token")
+    adv_pg_client = FakeAdvPgClient()
+    settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
+    service = AuthService(auth_client=auth_client, repository=repo, settings=settings, adv_pg_client=adv_pg_client)
+
+    with pytest.raises(AuthorizationError):
+        await service.check_saved_token("alice")
+
+    assert "alice" not in repo.storage
+
+
+@pytest.mark.asyncio
+async def test_check_saved_token_raises_when_saved_token_missing():
+    settings = Settings(db_user="wb", db_pass="wb", db_host="localhost", db_port=5432, db_name="wb_wrapper")
+    service = AuthService(
+        auth_client=FakeAuthClient(),
+        repository=FakeRepo(),
+        settings=settings,
+        adv_pg_client=FakeAdvPgClient(),
+    )
+
+    with pytest.raises(CredentialsNotFound):
+        await service.check_saved_token("alice")
 
 
 @pytest.mark.asyncio

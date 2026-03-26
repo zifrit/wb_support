@@ -11,7 +11,8 @@ from backend.app.core.config import get_settings
 from backend.app.db.helper import get_database_helper
 
 settings = get_settings()
-database_url_async = settings.test_database_url_async if settings.debug else settings.database_url_asyncpg
+use_test_db = settings.testing or settings.debug
+database_url_async = settings.test_database_url_async if use_test_db else settings.database_url_asyncpg
 db_helper = get_database_helper(database_url_async)
 ALEMBIC_INI_PATH = str(Path(__file__).resolve().parents[2] / "alembic.ini")
 
@@ -27,7 +28,8 @@ async def init_db() -> None:
 
 def run_migrations() -> None:
     alembic_cfg = Config(ALEMBIC_INI_PATH)
-    sync_engine = create_engine(settings.test_database_url_sync)
+    sync_database_url = settings.test_database_url_sync if use_test_db else settings.database_url_syncpg
+    sync_engine = create_engine(sync_database_url)
     try:
         tables = set(inspect(sync_engine).get_table_names())
     finally:

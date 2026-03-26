@@ -12,6 +12,11 @@ class CredentialsNotFound(AppError):
         super().__init__(message=message, status_code=401, error_type="USER_TOKEN_NOT_FOUND")
 
 
+class PermissionDeniedError(AppError):
+    def __init__(self, message: str = "Permission denied", details: dict | None = None):
+        super().__init__(message=message, status_code=403, error_type="PERMISSION_DENIED_ERROR", details=details)
+
+
 class AuthorizationError(AppError):
     def __init__(self, message: str = "Unauthorized", details: dict | None = None):
         super().__init__(message=message, status_code=401, error_type="AUTHORIZATION_ERROR", details=details)

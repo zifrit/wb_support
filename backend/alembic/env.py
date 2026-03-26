@@ -18,7 +18,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 settings = get_settings()
-database_url = settings.test_database_url_async if not settings.debug else settings.database_url_asyncpg
+database_url = settings.test_database_url_async if settings.testing or settings.debug else settings.database_url_asyncpg
 config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata
