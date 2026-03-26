@@ -2,31 +2,8 @@ services:
   backend:
     build:
       context: ./backend
-    environment:
-      DEBUG: ${DEBUG:-false}
-      DEBUG_USERNAME: ${DEBUG_USERNAME:-debug}
-      WB_CLIENT_SECRET: ${WB_CLIENT_SECRET:-dev_wb_secret}
-      WB_AUTHORIZATION_TEMPLATE: ${WB_AUTHORIZATION_TEMPLATE:-{token}}
-      ADMIN_AUTHORIZATION_TOKEN: ${ADMIN_AUTHORIZATION_TOKEN:-admin-local-token}
-      DEBUG_AUTHORIZATION_TOKEN: ${DEBUG_AUTHORIZATION_TOKEN:-debug-local-token}
-      WB_TIMEOUT_SECONDS: ${WB_TIMEOUT_SECONDS:-30}
-      WB_RETRIES: ${WB_RETRIES:-0}
-      AUTH_BASE_URL: ${AUTH_BASE_URL:-http://token-validator-mock:9000}
-      AUTH_ISSUE_PATH: ${AUTH_ISSUE_PATH:-/auth/issue}
-      AUTH_VERIFY_PATH: ${AUTH_VERIFY_PATH:-/auth/verify}
-      AUTH_TIMEOUT_SECONDS: ${AUTH_TIMEOUT_SECONDS:-10}
-      TEST_DATABASE_URL_ASYNC: ${TEST_DATABASE_URL_ASYNC:-sqlite+aiosqlite:///./app.db}
-      TEST_DATABASE_URL_SYNC: ${TEST_DATABASE_URL_SYNC:-sqlite:///./app.db}
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_USER: ${DB_USER:-wb}
-      DB_PASS: ${DB_PASS:-password}
-      DB_NAME: ${DB_NAME:-wb_wrapper}
-      CLICKHOUSE_URL: ${CLICKHOUSE_URL:-http://clickhouse:8123}
-      CLICKHOUSE_USER: ${CLICKHOUSE_USER:-default}
-      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
-      CLICKHOUSE_DATABASE: ${CLICKHOUSE_DATABASE:-default}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    env_file:
+      - ./.env
     ports:
       - "8000:8000"
     volumes:
@@ -46,8 +23,9 @@ services:
   frontend:
     build:
       context: ./frontend
+    env_file:
+      - ./.env
     environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
       CHOKIDAR_USEPOLLING: "true"
     ports:
       - "3000:3000"
@@ -60,13 +38,13 @@ services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_DB: wb_wrapper
-      POSTGRES_USER: wb
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${DB_NAME:-wb_wrapper}
+      POSTGRES_USER: ${DB_USER:-wb}
+      POSTGRES_PASSWORD: ${DB_PASS:-password}
     ports:
       - "5444:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U wb -d wb_wrapper"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 3s
       retries: 20
